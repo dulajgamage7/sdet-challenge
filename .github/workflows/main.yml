@@ -1,0 +1,86 @@
+name: Docker + Playwright CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      # pass secrets into compose as env variables
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ap-south-1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Optional: set up Docker Buildx (good practice)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Compose v2 is available by default on GitHub runners.
+      # Build and start the app stack (app + deps)
+      - name: Compose build + up (app stack)
+        run: |
+          docker compose version
+          docker compose up --build -d app mongodbatlas s3 aws
+
+      # Wait for app to be healthy (port 8000)
+      - name: Wait for app
+        run: |
+          for i in {1..60}; do
+            if curl -fsS http://localhost:8000 >/dev/null; then echo "App is up"; exit 0; fi
+            echo "Waiting for app..."; sleep 3;
+          done
+          echo "App failed to start"; exit 1
+
+      # Build the tests image (playwright-test/Dockerfile.tests)
+      - name: Build tests image
+        run: |
+          docker compose build tests
+
+      # Run tests service (uses your Docker-only scripts)
+      - name: Run Playwright tests in Docker
+        run: |
+          docker compose run --rm tests
+
+      # Copy reports out of the tests volume (already bind-mounted to repo)
+      - name: List reports
+        run: |
+          ls -la playwright-test || true
+          ls -la playwright-test/allure-results || true
+          ls -la playwright-test/allure-report || true
+          ls -la playwright-test/playwright-report || true
+
+      # Upload artifacts
+      - name: Upload allure-results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: playwright-test/allure-results/
+          retention-days: 30
+
+      - name: Upload Allure HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: playwright-test/allure-report/
+          retention-days: 30
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-test/playwright-report/
+          retention-days: 30

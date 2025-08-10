@@ -1,0 +1,105 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/tmp/app
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - ENV=${ENV:-LOCAL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-ap-south-1}
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL:-http://s3:4566}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME:-qna-documents}
+    command: >
+      /bin/bash -lc
+      "uvicorn rag.app:app --host 0.0.0.0 --port 8000"
+    depends_on:
+      - mongodbatlas
+      - s3
+    test:
+        [
+          "CMD-SHELL",
+          "python - <<'PY'\nimport sys,urllib.request\ntry:\n  urllib.request.urlopen('http://localhost:8000/', timeout=2)\n  sys.exit(0)\nexcept Exception:\n  sys.exit(1)\nPY",
+        ]
+    interval: 5s
+    timeout: 2s
+    retries: 20
+    start_period: 10s
+
+  mongodbatlas:
+    image: mongodb/mongodb-atlas-local:latest
+    ports:
+      - "27017:27017"
+    environment:
+      MONGODB_INITDB_ROOT_USERNAME: ${MONGODB_INITDB_ROOT_USERNAME:-user}
+      MONGODB_INITDB_ROOT_PASSWORD: ${MONGODB_INITDB_ROOT_PASSWORD:-pass}
+
+  s3:
+    image: localstack/localstack
+    container_name: localstack
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-qna-documents}
+    volumes:
+      - ./aws:/etc/localstack/init/ready.d
+
+  aws:
+    container_name: aws-cli
+    image: amazon/aws-cli:latest
+    environment:
+      AWS_REGION: ${AWS_DEFAULT_REGION:-ap-south-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-test}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-test}
+    entrypoint: tail -f /dev/null
+    depends_on:
+      - s3
+      - app
+
+  tests:
+    build:
+      context: ./playwright-test
+      dockerfile: Dockerfile.tests
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      PLAYWRIGHT_BASE_URL: "http://app:8000"
+      WORKERS: "1"
+      NO_PROXY: "app,localhost,127.0.0.1"
+      no_proxy: "app,localhost,127.0.0.1"
+      HTTP_PROXY: ""
+      HTTPS_PROXY: ""
+    working_dir: /work
+    volumes:
+      - ./playwright-test:/work
+    shm_size: "1gb"
+    command:
+      - bash
+      - -lc
+      - |
+        set -e
+        echo "Connectivity checks..."
+        echo "-- HEAD (HTTP):"
+        curl -I http://app:8000/ || true
+
+        echo "-- First 40 lines (HTTP body):"
+        curl -s http://app:8000/ | head -n 40 || true
+
+        echo "Waiting for app via HTTP..."
+        npx wait-on http-get://app:8000
+
+        echo "Running Playwright tests…"
+        npm run playwright:run:allTestsDocker
+
+        echo "Generating Allure report…"
+        npm run report:allure:generateDocker

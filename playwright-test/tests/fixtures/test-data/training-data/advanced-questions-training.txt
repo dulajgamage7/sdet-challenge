@@ -1,0 +1,30 @@
+How does the Tensor Core architecture in RTX cards contribute to AI-based features like DLSS?
+
+Tensor Cores are specialized hardware units in NVIDIA RTX GPUs designed for high-speed matrix operations, which are crucial for deep learning tasks. In DLSS (Deep Learning Super Sampling), Tensor Cores accelerate AI-based image reconstruction.
+
+Instead of rendering every pixel, the game engine renders a lower-resolution image. Tensor Cores then use a neural network model (trained on high-quality game frames) to upscale it in real time. This results in higher FPS while preserving or improving image quality. The architecture of Tensor Cores allows for fast FP16 and INT8 computations, making real-time AI enhancement possible.
+
+
+ RTX 4080: More powerful, built on the Ada Lovelace architecture with more CUDA cores, higher memory bandwidth, and larger L2 cache. Ideal for ultra settings at 1440p and even capable of 4K gaming.
+ RTX 4070 Ti: Also based on Ada Lovelace, but slightly cut down in terms of performance and memory bandwidth. Great for 1440p high/ultra settings, but with lower frame rates compared to the 4080.
+Summary:
+
+ At 1440p, RTX 4080 delivers 20–30% higher FPS on average.
+ RTX 4080 is better for future-proofing, high refresh rates, and ray tracing-heavy games.
+ RTX 4070 Ti offers better value for mid-tier gaming rigs.
+
+DLSS 2.0 uses AI to upscale lower-resolution frames to a higher resolution using temporal and spatial data from the current and previous frames.
+DLSS 3, introduced with Ada Lovelace GPUs, includes a new feature called Frame Generation.
+
+DLSS 3 uses AI to generate entirely new frames between actual rendered frames, effectively doubling the frame rate. This is enabled by Optical Flow Accelerators and Tensor Cores.
+
+Key difference:
+DLSS 3 can generate new frames independently of the CPU, significantly improving performance in CPU-bound scenarios. DLSS 2 only upscales frames that were actually rendered.
+
+
+The RTX 4090, based on the Ada Lovelace architecture, is highly suitable for individual or small-scale AI model training. It features:
+
+ 24GB of GDDR6X memory, supporting large models and datasets.
+ High Tensor Core throughput for fast AI/ML workloads.
+ CUDA, Tensor, and RT cores optimized for parallel processing.
+ FP16, BF16, INT8, and TensorFloat-32 (TF32) support for deep learning.

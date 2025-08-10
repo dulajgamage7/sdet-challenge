@@ -1,0 +1,33 @@
+# tests/Dockerfile.tests
+FROM mcr.microsoft.com/playwright:v1.54.2-jammy
+
+WORKDIR /work
+
+# Allure CLI needs Java; we also need curl for debugging
+RUN apt-get update \
+    && apt-get install -y openjdk-17-jre curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install dependencies first for layer caching
+COPY package*.json ./
+RUN npm ci
+
+# (Optional) explicit dev tools — npm ci already installs devDeps, so these are redundant;
+RUN npm i -D string-similarity allure-playwright allure-commandline fs-extra
+
+# Copy only what's needed for test runs
+COPY playwright.config.* ./
+
+# tests (includes specs, support, fixtures, data, etc.)
+COPY tests/ ./tests
+
+# Ensure Playwright browsers & libs (base image already has, but safe if you bump versions)
+RUN npx playwright install --with-deps
+
+# Default envs; override in compose
+ENV PLAYWRIGHT_BASE_URL=http://app:8000
+ENV IGNORE_HTTPS_ERRORS=0
+ENV WORKERS=1
+
+# Default command just prints versions; compose overrides this with the test command
+CMD ["bash", "-lc", "npx playwright --version && node -v"]

@@ -1,0 +1,32 @@
+{
+  "name": "playwright-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "playwright:ui": "node_modules\\.bin\\playwright test tests/specs --ui --project=chromium",
+    "playwright:ui:debug": "node_modules\\.bin\\playwright test tests/specs --debug --project=chromium",
+    "playwright:run:allUiTests": "node_modules\\.bin\\playwright test tests/specs --ui --workers=1 --project=chromium",
+    "playwright:run:allTests": "npx playwright test tests/specs/ui-tests --workers=1 --project=chromium",
+    "playwright:run:regression": "node_modules\\.bin\\playwright test tests/specs/login.spec.js --grep @Regression --project=chromium",
+    "show:report": "npx playwright show-report",
+    "generate-report": "node tests/support/utils/generate-allure-report.js",
+    "open-report": "node tests/support/utils/open-allure-report.js",
+    "playwright:run:allTestsDocker": "playwright test tests/specs/ui-tests --workers=1 --project=chromium",
+    "report:allure:generateDocker": "allure generate --clean allure-results -o allure-report",
+    "report:allure:openDocker": "allure open allure-report -h 0.0.0.0 -p 9999",
+    "generateAndOpenReport": "node tests/support/utils/generateAndOpenReport.js",
+    "report:openDocker": "playwright show-report"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.54.2",
+    "@types/node": "^24.2.0",
+    "allure-commandline": "^2.34.1",
+    "allure-playwright": "^3.3.3",
+    "fs-extra": "^11.3.1",
+    "string-similarity": "^4.0.4"
+  }
+}
