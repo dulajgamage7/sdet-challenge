@@ -13,7 +13,7 @@ test.describe("Scenario: File Upload Flow - UI", () => {
   });
 
   /* single-file upload + process - Implement automation scripts to upload a single file using the application’s file upload functionality.*/
-  test("Verify whether user is able to successfully upload and process a training document", async () => {
+  test("Verify whether user is able to successfully upload and process a training document @Regression", async () => {
     const { filename, status } = pageManager.fileUploadData;
 
     await test.step("GIVEN I am on the file upload page", async () => {
@@ -123,7 +123,7 @@ test.describe("Scenario: File Upload Flow - UI", () => {
   });
 
   //Ensure that the file upload is in progress (using both API and UI).
-  test("Verify upload request completes (API) and UI shows state transitions", async ({
+  test("Verify upload request completes (API) and UI shows state transitions @Regression", async ({
     page,
   }) => {
     const { filename, status } = pageManager.fileUploadData;
