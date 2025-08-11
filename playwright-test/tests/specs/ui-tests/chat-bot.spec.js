@@ -15,7 +15,7 @@ test.describe("Chat Bot - Document-aware Q&A", () => {
   });
 
   // ========== Test 1: Open Chat ==========
-  test("Open the chat and verify it is ready for input", async () => {
+  test("Open the chat and verify it is ready for input @Regression", async () => {
     await test.step("GIVEN I should see the chatbot page and should be the main page", async () => {
       await expect(pageManager.page).toHaveURL(/localhost:8000\/?$/);
     });
